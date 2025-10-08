@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7d4aff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#4e2fdd" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#0a0a1a"/>
+
+  <!-- AURA Core -->
+  <circle cx="600" cy="400" r="60" fill="url(#coreGlow)" filter="url(#glow)"/>
+  <text x="600" y="410" text-anchor="middle" font-family="Inter, sans-serif" font-size="24" fill="#fff" font-weight="bold">
+    AURA Core
+  </text>
+
+  <!-- Layer Nodes -->
+  <circle cx="600" cy="180" r="30" fill="#4e2fdd"/>
+  <text x="600" y="185" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#fff">Data Layer</text>
+
+  <circle cx="600" cy="620" r="30" fill="#7d4aff"/>
+  <text x="600" y="625" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#fff">Insight Layer</text>
+
+  <circle cx="360" cy="400" r="30" fill="#7d4aff"/>
+  <text x="360" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#fff">AI Layer</text>
+
+  <circle cx="840" cy="400" r="30" fill="#4e2fdd"/>
+  <text x="840" y="405" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" fill="#fff">Simulation</text>
+
+  <circle cx="600" cy="400" r="120" fill="none" stroke="#7d4aff" stroke-width="2" stroke-dasharray="10 10"/>
+  
+  <!-- Connections -->
+  <line x1="600" y1="400" x2="600" y2="180" stroke="#7d4aff" stroke-width="2"/>
+  <line x1="600" y1="400" x2="600" y2="620" stroke="#7d4aff" stroke-width="2"/>
+  <line x1="600" y1="400" x2="360" y2="400" stroke="#7d4aff" stroke-width="2"/>
+  <line x1="600" y1="400" x2="840" y2="400" stroke="#7d4aff" stroke-width="2"/>
+
+</svg>
