@@ -29,21 +29,29 @@ export default function Home() {
       </section>
 
       <section
-        id="aura-core"
-        ref={auraRef}
-        className="relative min-h-screen flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000"
-      >
-        <img
-          src="/visuals/aura_core_blueprint.svg"
-          alt="AURA Core Blueprint"
-          className="max-w-4xl w-full"
-        />
-        <p className="text-white/80 text-center mt-6 text-2xl font-semibold">
-          AURA Core — The Neural Engine Powering All Web4 Intelligence.
-        </p>
-      </section>
+  id="aura-core"
+  ref={auraRef}
+  className="relative min-h-screen flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000"
+>
+  <img
+    src="/visuals/aura_core_blueprint.svg"
+    alt="AURA Core Blueprint"
+    className="max-w-4xl w-full"
+  />
+  <p className="text-white/80 text-center mt-6 text-2xl font-semibold">
+    AURA Core — The Neural Engine Powering All Web4 Intelligence.
+  </p>
 
-      <FloatingOrb />
+  {/* Click to Explore Button */}
+  <a
+    href="/aura-visualizer"
+    className="mt-8 px-6 py-3 bg-[#7d4aff]/80 hover:bg-[#7d4aff] rounded text-white font-semibold transition-all"
+  >
+    Click to Explore
+  </a>
+</section>
+
+    <FloatingOrb />
     </main>
   );
 }
