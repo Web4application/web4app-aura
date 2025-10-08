@@ -1,0 +1,8 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "interface": "auraCoreAsset",
+    "id": "5avjMVza8SuMhgTfzEGNWJskDELMCQk9juAAc8zeQoNa",
+    "content": {
+      "$schema": "https://schema.aura.com/nft1.0.json",
+      "json_uri": "https://aura.net/2xl-wNjCDAnCEtPbtUZRlXypSP6boMVTt5On8F7NPoc",
