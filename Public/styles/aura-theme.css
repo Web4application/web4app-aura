@@ -1,19 +1,28 @@
-.aura-active {
-  opacity: 1 !important;
-  animation: auraPulse 3s infinite ease-in-out;
-}
-
+body, html { margin:0; padding:0; overflow-x:hidden; font-family:Inter,sans-serif;}
 .floating-node {
   transition: transform 0.2s linear;
   filter: drop-shadow(0 0 10px #7d4aff);
 }
+
+.aura-parallax {
+  transform: translateY(0);
+  transition: transform 0.1s ease-out;
+}
+.aura-parallax-text { transform: translateY(0); transition: transform 0.1s ease-out; }
+.aura-parallax-button { transform: translateY(0); transition: transform 0.1s ease-out; }
 
 #aura-core a:hover {
   box-shadow: 0 0 25px #7d4aff, 0 0 50px #4e2fdd;
   transform: scale(1.05);
 }
 
-@keyframes auraPulse {
-  0%, 100% { filter: drop-shadow(0 0 15px #7d4aff); }
-  50% { filter: drop-shadow(0 0 35px #4e2fdd); }
+/* Particle canvas styles */
+#particle-canvas {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:-1;
+  pointer-events:none;
 }
