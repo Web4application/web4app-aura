@@ -101,7 +101,104 @@ canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; c
       <canvas class="panel-chart" width="120" height="40"></canvas>
     </div>
   </div>
+  
+<script>
+  class QuantumNode {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.active = Math.random() > 0.5;
+  }
 
+  toggle() {
+    this.active = !this.active;
+  }
+
+  draw(ctx) {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+    ctx.fillStyle = this.active ? '#0ea5e9' : '#475569';
+    ctx.fill();
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.stroke();
+  }
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const dataDisplay = document.getElementById('data-display');
+
+let nodes = [
+  new QuantumNode(100, 100),
+  new QuantumNode(200, 200),
+  new QuantumNode(300, 100),
+  new QuantumNode(400, 200)
+];
+
+let xlsData = generateXLSLData(10);
+
+function generateXLSLData(numRecords) {
+  const data = [];
+  for (let i = 0; i < numRecords; i++) {
+    data.push({
+      id: i,
+      quantumState: Math.random(),
+      nodeActivity: Math.random() > 0.5 ? 'active' : 'inactive',
+      timestamp: new Date().toISOString()
+    });
+  }
+  return data;
+}
+
+function drawNodes() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  nodes.forEach(node => node.draw(ctx));
+  updateDataDisplay();
+}
+
+function updateDataDisplay() {
+  const activeNodes = nodes.filter(n => n.active).length;
+  dataDisplay.innerHTML = `Active Nodes: ${activeNodes} | Total Nodes: ${nodes.length}<br>`;
+  dataDisplay.innerHTML += `Sample XLSL Data: ${JSON.stringify(xlsData.slice(0,2))}`;
+}
+
+function teleport(node, targetX, targetY) {
+  let steps = 20;
+  let dx = (targetX - node.x) / steps;
+  let dy = (targetY - node.y) / steps;
+
+  function animate() {
+    if (steps > 0) {
+      node.x += dx;
+      node.y += dy;
+      steps--;
+      drawNodes();
+      requestAnimationFrame(animate);
+    }
+  }
+  animate();
+}
+
+// Event listeners
+canvas.addEventListener('click', (event) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  teleport(nodes[0], x, y);
+});
+
+// Update periodically
+setInterval(() => {
+  nodes.forEach(node => node.toggle());
+  drawNodes();
+}, 2000);
+
+// Initial draw
+drawNodes();
+</div>
+</div>
+  
+</body>
   <div id="aura-panels">
     <div class="aura-panel" id="dimensions-panel">
       Dimensions: <span id="dimensions-value">0</span>
@@ -217,6 +314,21 @@ function drawBackground(){ const t=Date.now()*0.002; const grd=ctx.createRadialG
 
 function drawConnections(){ for(let i=0;i<nodes.length;i++){ for(let j=i+1;j<nodes.length;j++){ const dx=nodes[j].x-nodes[i].x, dy=nodes[j].y-nodes[i].y; const dist=Math.hypot(dx,dy); if(dist<200){ ctx.strokeStyle=`rgba(0,255,255,${1-dist/200})`; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke(); }}}}
 
+  function generateXLSLData(numRecords) {
+  const data = [];
+  for (let i = 0; i < numRecords; i++) {
+    data.push({
+      id: i,
+      quantumState: Math.random(),
+      nodeActivity: Math.random() > 0.5 ? 'active' : 'inactive',
+      timestamp: new Date().toISOString()
+    });
+  }
+  return data;
+}
+
+const xlsData = generateXLSLData(10);
+console.log(xlsData);
 function animate(){
   drawBackground();
   drawConnections();
@@ -243,6 +355,14 @@ canvas.addEventListener('click', e=>{
 });
 
 window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+setInterval(() => {
+  // Update data or visuals
+  nodes.forEach(node => {
+    node.active = !node.active;
+  });
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  nodes.forEach(node => node.draw(ctx));
+}, 1000);
 </script>
 </body>
 </html>
