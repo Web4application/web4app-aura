@@ -3,207 +3,330 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Web4app – Aura Mode</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<title>AURA ECOSYSTEM</title>
 <style>
-body, html { margin:0; padding:0; font-family:Inter,sans-serif; background:#0a0a1a; color:white; overflow-x:hidden; }
-canvas#particle-canvas { position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none; }
+  body {
+    margin:0;
+    overflow:hidden;
+    background:#000;
+    color:#0ff;
+    font-family: 'Courier New', monospace;
+  }
 
-section { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:4rem 1rem; }
-h1 { font-size:4rem; text-align:center; margin-bottom:1rem; }
-p { font-size:1.5rem; text-align:center; max-width:700px; color:rgba(255,255,255,0.8); }
-a.cta { margin-top:2rem; padding:0.75rem 2rem; background:rgba(125,74,255,0.8); color:white; font-weight:600; border-radius:0.5rem; text-decoration:none; transition:0.3s; }
-a.cta:hover { background:#7d4aff; box-shadow:0 0 25px #7d4aff, 0 0 50px #4e2fdd; transform:scale(1.05); }
+  #quantum-output { position:absolute; top:0; left:0; width:100%; height:100%; z-index:12; }
+  .quantum-line { position:absolute; font-weight:bold; text-shadow:0 0 5px #0ff,0 0 10px #0ff; }
+  .floating-node {
+    position:absolute;
+    border-radius:50%;
+    background-color: rgba(125,74,255,0.6);
+    box-shadow:0 0 10px rgba(125,74,255,0.6);
+    transition: box-shadow 0.1s ease-in-out;
+  }
+  #ambient-glow { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
 
-.parallax { transform:translateY(0); transition: transform 0.1s ease-out; }
-.floating-node { position:absolute; border-radius:50%; filter: drop-shadow(0 0 10px #7d4aff); }
-img#blueprint { max-width:600px; z-index:10; position:relative; margin-bottom:1rem; }
+  #data-panels {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index:20;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
 
-.module-card { background:rgba(125,74,255,0.1); padding:2rem; margin:1rem; border-radius:1rem; box-shadow:0 0 20px rgba(125,74,255,0.3); text-align:center; transition:0.3s; width:220px; }
-.module-card:hover { transform:translateY(-5px); box-shadow:0 0 25px rgba(125,74,255,0.6); }
-.module-grid { display:flex; flex-wrap:wrap; justify-content:center; gap:2rem; margin-top:2rem; }
-footer { padding:2rem; text-align:center; color:rgba(255,255,255,0.5); font-size:0.9rem; }
+  .panel {
+    background: rgba(0,0,0,0.6);
+    color: #0ff;
+    padding: 10px 15px;
+    font-weight:bold;
+    border-radius:8px;
+    text-shadow:0 0 5px #0ff;
+    transition: transform 0.1s ease, background 0.3s ease;
+  }
+
+  .panel-chart { display:block; margin-top:5px; }
 </style>
 </head>
 <body>
 
-<canvas id="particle-canvas"></canvas>
+<div id="quantum-output"></div>
+<div id="ambient-glow"></div>
 
-<!-- Hero Section -->
-<section>
-  <h1>Web4app – Aura Mode</h1>
-  <p>Experience AI like never before.</p>
-</section>
-
-<!-- AURA Core Section -->
-<section id="aura-core">
-  <div id="floating-nodes"></div>
-  <img src="visuals/aura_core_blueprint.svg" alt="AURA Core Blueprint" id="blueprint" class="parallax">
-  <p class="parallax" style="margin-top:1rem; font-size:1.75rem; text-align:center;">
-    AURA Core — The Neural Engine Powering All Web4 Intelligence.
-  </p>
-  <a href="aura-visualizer.html" class="cta parallax">Click to Explore</a>
-</section>
-
-<!-- AI Modules Section -->
-<section>
-  <h1>AI Modules</h1>
-  <div class="module-grid">
-    <div class="module-card">Data Layer</div>
-    <div class="module-card">AI Layer</div>
-    <div class="module-card">Insight Layer</div>
-    <div class="module-card">Simulation</div>
-    <div class="module-card">Integration</div>
+<div id="data-panels">
+  <div class="panel" id="quantum-panel">
+    Quantum Activity: 0
+    <canvas class="panel-chart" width="120" height="40"></canvas>
   </div>
-</section>
-
-<!-- Footer -->
-<footer>
-  &copy; 2025 Web4app | All rights reserved
-</footer>
+  <div class="panel" id="spark-panel">
+    Active Sparks: 0
+    <canvas class="panel-chart" width="120" height="40"></canvas>
+  </div>
+  <div class="panel" id="node-panel">
+    Active Nodes: 0
+    <canvas class="panel-chart" width="120" height="40"></canvas>
+  </div>
+</div>
 
 <script>
-  // ===== Particle Background =====
-  const canvas = document.getElementById('particle-canvas');
-  const ctx = canvas.getContext('2d');
-  let width = canvas.width = window.innerWidth;
-  let height = canvas.height = window.innerHeight;
+// ======= Setup =======
 
-  class Particle {
-    constructor() {
-      this.x = Math.random()*width;
-      this.y = Math.random()*height;
-      this.radius = Math.random()*2 + 1;
-      this.speedX = (Math.random()-0.5)*0.5;
-      this.speedY = (Math.random()-0.5)*0.5;
-    }
-    update() { this.x+=this.speedX; this.y+=this.speedY;
-      if(this.x>width)this.x=0; if(this.x<0)this.x=width;
-      if(this.y>height)this.y=0; if(this.y<0)this.y=height;
-    }
-    draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.radius,0,Math.PI*2); ctx.fillStyle="#7d4aff"; ctx.fill(); }
-  }
-  const particles = Array.from({length:120},()=>new Particle());
-  function animateParticles(){ ctx.clearRect(0,0,width,height); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(animateParticles);}
-  animateParticles();
-  window.addEventListener("resize",()=>{width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;});
-
-  // ===== Floating Nodes =====
-  const nodeContainer = document.getElementById("floating-nodes");
-  const nodes = [];
-  for(let i=0;i<6;i++){
-    const node = document.createElement("div");
-    node.className="floating-node";
-    node.style.width = node.style.height = `${20+Math.random()*20}px`;
-    node.style.backgroundColor="rgba(125,74,255,0.6)";
-    node.style.left = `${50+Math.random()*200-100}px`;
-    node.style.top = `${50+Math.random()*200-100}px`;
-    nodeContainer.appendChild(node);
-    nodes.push(node);
-  }
-  let angle=0;
-  function animateNodes(){ angle+=0.01; nodes.forEach((node,i)=>{const radius=120+i*10; node.style.transform=`translate(${Math.cos(angle+i)*radius}px,${Math.sin(angle+i)*radius}px)`;}); requestAnimationFrame(animateNodes);}
-  animateNodes();
-
-  // ===== Parallax Scroll =====
-  const blueprint = document.getElementById("blueprint");
-  const parallaxElements = document.querySelectorAll(".parallax");
-  window.addEventListener("scroll",()=>{
-    const scrollTop = window.scrollY;
-    blueprint.style.transform = `translateY(${scrollTop*0.2}px)`;
-    parallaxElements.forEach((el)=>{ if(el!==blueprint){ el.style.transform = `translateY(${scrollTop*0.4}px)`; } });
-  
-// ===== Floating Nodes & Pulsating Neural Lines =====
-const nodeContainer = document.getElementById("floating-nodes");
+const variables = ['ψ','Φ','Δ','λ','θ','σ','E','ħ'];
+const operators = ['=','≈','∑','+','-','*','/'];
+const numLines = 50;
+const lines = [];
 const nodes = [];
-const numNodes = 6;
+const sparks = [];
+const maxNodes = 10;
+let mouse = {x: window.innerWidth/2, y: window.innerHeight/2};
 
-// Create nodes
-for (let i = 0; i < numNodes; i++) {
-  const node = document.createElement("div");
-  node.className = "floating-node";
-  const size = 20 + Math.random() * 20;
-  node.style.width = node.style.height = `${size}px`;
-  node.style.backgroundColor = "rgba(125,74,255,0.6)";
-  node.style.left = `${50 + Math.random() * 200 - 100}px`;
-  node.style.top = `${50 + Math.random() * 200 - 100}px`;
-  nodeContainer.appendChild(node);
-  nodes.push({
-    el: node,
-    baseSize: size,
-    size: size,
-    x: parseFloat(node.style.left),
-    y: parseFloat(node.style.top),
-    pulsePhase: Math.random() * Math.PI * 2
-  });
+// Track mouse
+window.addEventListener('mousemove', e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+
+// Quantum output
+const quantumOutput = document.getElementById('quantum-output');
+
+// Helpers
+function getRandomQuantumLine() {
+  const var1 = variables[Math.floor(Math.random()*variables.length)];
+  const var2 = variables[Math.floor(Math.random()*variables.length)];
+  const op = operators[Math.floor(Math.random()*operators.length)];
+  const value = (Math.random()*10).toFixed(3);
+  return `${var1} ${op} ${var2} + ${value}`;
 }
 
-let angle = 0;
+function createQuantumLine() {
+  const line = document.createElement('div');
+  line.className='quantum-line';
+  line.textContent=getRandomQuantumLine();
+  line.x=Math.random()*window.innerWidth;
+  line.y=Math.random()*window.innerHeight;
+  line.speed=1+Math.random()*2;
+  line.colorHue=Math.random()*360;
+  line.style.left=line.x+'px';
+  line.style.top=line.y+'px';
+  quantumOutput.appendChild(line);
+  lines.push(line);
+}
+for(let i=0;i<numLines;i++) createQuantumLine();
 
-// Create canvas for neural lines
-const lineCanvas = document.createElement("canvas");
-lineCanvas.style.position = "absolute";
-lineCanvas.style.top = 0;
-lineCanvas.style.left = 0;
-lineCanvas.style.width = "100%";
-lineCanvas.style.height = "100%";
-lineCanvas.style.zIndex = "5";
-lineCanvas.style.pointerEvents = "none";
-nodeContainer.appendChild(lineCanvas);
-const lineCtx = lineCanvas.getContext("2d");
-lineCanvas.width = window.innerWidth;
-lineCanvas.height = window.innerHeight;
+function createNode(x,y){
+  const el = document.createElement('div');
+  el.className='floating-node';
+  el.style.width='20px';
+  el.style.height='20px';
+  el.style.left=x+'px';
+  el.style.top=y+'px';
+  document.body.appendChild(el);
+  nodes.push({x,y,el});
+}
+for(let i=0;i<maxNodes;i++){
+  createNode(Math.random()*window.innerWidth, Math.random()*window.innerHeight);
+}
 
-function animateNodes() {
-  angle += 0.01;
-  const time = Date.now() * 0.002;
+// ======= Canvases =======
 
-  nodes.forEach((node, i) => {
-    // Orbit animation
-    const radius = 120 + i * 10;
-    const offsetX = Math.cos(angle + i) * radius;
-    const offsetY = Math.sin(angle + i) * radius;
-    node.el.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+const sparkCanvas = document.createElement('canvas');
+sparkCanvas.style.position='absolute';
+sparkCanvas.style.top='0';
+sparkCanvas.style.left='0';
+sparkCanvas.style.width='100%';
+sparkCanvas.style.height='100%';
+sparkCanvas.style.pointerEvents='none';
+sparkCanvas.style.zIndex=14;
+document.body.appendChild(sparkCanvas);
+const sparkCtx = sparkCanvas.getContext('2d');
+sparkCanvas.width=window.innerWidth;
+sparkCanvas.height=window.innerHeight;
 
-    // Pulsating size
-    node.pulsePhase += 0.05;
-    node.size = node.baseSize + Math.sin(node.pulsePhase) * 5;
-    node.el.style.width = node.el.style.height = `${node.size}px`;
+const glowCanvas = document.createElement('canvas');
+glowCanvas.style.position='absolute';
+glowCanvas.style.top='0';
+glowCanvas.style.left='0';
+glowCanvas.style.width='100%';
+glowCanvas.style.height='100%';
+glowCanvas.style.pointerEvents='none';
+glowCanvas.style.zIndex=13;
+document.body.appendChild(glowCanvas);
+const glowCtx = glowCanvas.getContext('2d');
+glowCanvas.width=window.innerWidth;
+glowCanvas.height=window.innerHeight;
 
-    node.x = offsetX + window.innerWidth / 2;
-    node.y = offsetY + window.innerHeight / 2;
-  });
+const ambientCanvas = document.getElementById('ambient-glow');
+const ambientCtx = ambientCanvas.getContext('2d');
+ambientCanvas.width=window.innerWidth;
+ambientCanvas.height=window.innerHeight;
 
-  // Draw neural lines with color shifting
-  lineCtx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
-  nodes.forEach((n1, i) => {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const n2 = nodes[j];
-      const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
-      if (dist < 300) {
-        lineCtx.beginPath();
-        lineCtx.moveTo(n1.x, n1.y);
-        lineCtx.lineTo(n2.x, n2.y);
-        // Color shifting over time
-        const hue = (time*40 + i*60 + j*30) % 360;
-        lineCtx.strokeStyle = `hsla(${hue}, 80%, 60%, ${1 - dist/300})`;
-        lineCtx.lineWidth = 1.5;
-        lineCtx.stroke();
+const quantumPanel = document.getElementById('quantum-panel');
+const sparkPanel = document.getElementById('spark-panel');
+const nodePanel = document.getElementById('node-panel');
+
+const quantumCanvas = document.querySelector('#quantum-panel canvas').getContext('2d');
+const sparkCanvasCtx = document.querySelector('#spark-panel canvas').getContext('2d');
+const nodeCanvasCtx = document.querySelector('#node-panel canvas').getContext('2d');
+
+const chartData={quantum:[],sparks:[],nodes:[]};
+const maxPoints=50;
+
+// ======= Spark + Trail Classes =======
+
+class Spark{
+  constructor(x,y,targetNode){
+    this.x=x; this.y=y; this.target=targetNode;
+    this.speed=0.02+Math.random()*0.03;
+    this.hue=Math.random()*360;
+  }
+  update(){
+    const dx=this.target.x-this.x;
+    const dy=this.target.y-this.y;
+    this.x+=dx*this.speed;
+    this.y+=dy*this.speed;
+    sparkTrails.push(new SparkTrail(this.x,this.y,this.hue));
+    sparkCtx.beginPath();
+    sparkCtx.arc(this.x,this.y,2,0,Math.PI*2);
+    sparkCtx.fillStyle=`hsla(${this.hue},100%,70%,0.8)`;
+    sparkCtx.fill();
+  }
+  isArrived(){ return Math.hypot(this.x-this.target.x,this.y-this.target.y)<5; }
+}
+
+class SparkTrail{
+  constructor(x,y,hue){ this.x=x; this.y=y; this.hue=hue; this.life=30+Math.random()*20; }
+  update(){
+    this.life--;
+    glowCtx.beginPath();
+    glowCtx.arc(this.x,this.y,1.5,0,Math.PI*2);
+    glowCtx.fillStyle=`hsla(${this.hue},100%,70%,${this.life/50})`;
+    glowCtx.fill();
+  }
+}
+
+class MicroFlare{
+  constructor(x,y){ this.x=x; this.y=y; this.size=Math.random()*3+1; this.life=20+Math.random()*30; this.hue=Math.random()*360; }
+  update(){
+    this.life--;
+    ambientCtx.beginPath();
+    ambientCtx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ambientCtx.fillStyle=`hsla(${this.hue},100%,70%,${this.life/50})`;
+    ambientCtx.fill();
+  }
+}
+
+const sparksArr=[],sparkTrails=[],microFlares=[];
+
+// ======= Animation Loop =======
+
+function animateAll(){
+  sparkCtx.clearRect(0,0,sparkCanvas.width,sparkCanvas.height);
+  glowCtx.clearRect(0,0,glowCanvas.width,glowCanvas.height);
+  ambientCtx.clearRect(0,0,ambientCanvas.width,ambientCanvas.height);
+
+  // Update quantum lines
+  lines.forEach(line=>{
+    line.y+=line.speed;
+    const dxm=mouse.x-line.x;
+    const dym=mouse.y-line.y;
+    if(Math.sqrt(dxm*dxm+dym*dym)<150){ line.x+=dxm*0.02; line.y+=dym*0.02; }
+    nodes.forEach(node=>{
+      const dx=node.x-line.x;
+      const dy=node.y-line.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<120){ line.x+=dx*0.03; line.y+=dy*0.03;
+        if(Math.random()<0.02) sparksArr.push(new Spark(line.x,line.y,node));
       }
-    }
+    });
+    if(line.y>window.innerHeight){ line.y=-20; line.x=Math.random()*window.innerWidth; line.textContent=getRandomQuantumLine(); line.colorHue=Math.random()*360; }
+    line.style.left=line.x+'px';
+    line.style.top=line.y+'px';
+    line.style.color=`hsla(${line.colorHue},100%,70%,${0.6+0.4*Math.sin(Date.now()*0.005)})`;
   });
 
-  requestAnimationFrame(animateNodes);
+  // Sparks
+  for(let i=sparksArr.length-1;i>=0;i--){
+    sparksArr[i].update();
+    if(sparksArr[i].isArrived()){
+      sparksArr[i].target.el.style.boxShadow=`0 0 ${15+Math.random()*15}px rgba(125,74,255,0.9)`;
+      sparksArr.splice(i,1);
+    }
+  }
+
+  // Spark trails
+  for(let i=sparkTrails.length-1;i>=0;i--){
+    sparkTrails[i].update();
+    if(sparkTrails[i].life<=0) sparkTrails.splice(i,1);
+  }
+
+  // Ambient glow & micro-flares
+  nodes.forEach(node=>{
+    const radius=50+20*Math.sin(Date.now()*0.005+node.x);
+    const gradient=ambientCtx.createRadialGradient(node.x,node.y,0,node.x,node.y,radius);
+    gradient.addColorStop(0,'rgba(125,74,255,0.15)');
+    gradient.addColorStop(1,'rgba(125,74,255,0)');
+    ambientCtx.fillStyle=gradient;
+    ambientCtx.beginPath();
+    ambientCtx.arc(node.x,node.y,radius,0,Math.PI*2);
+    ambientCtx.fill();
+  });
+
+  lines.forEach(line=>{ if(Math.random()<0.02) microFlares.push(new MicroFlare(line.x+(Math.random()-0.5)*10,line.y+(Math.random()-0.5)*10)); });
+  for(let i=microFlares.length-1;i>=0;i--){ microFlares[i].update(); if(microFlares[i].life<=0) microFlares.splice(i,1); }
+
+  // Panels update
+  const activeQuantum = lines.filter(line=>nodes.some(node=>Math.hypot(node.x-line.x,node.y-line.y)<120)).length;
+  chartData.quantum.push(activeQuantum);
+  chartData.sparks.push(sparksArr.length);
+  chartData.nodes.push(nodes.length);
+  if(chartData.quantum.length>maxPoints) chartData.quantum.shift();
+  if(chartData.sparks.length>maxPoints) chartData.sparks.shift();
+  if(chartData.nodes.length>maxPoints) chartData.nodes.shift();
+
+  quantumPanel.textContent=`Quantum Activity: ${activeQuantum}`;
+  sparkPanel.textContent=`Active Sparks: ${sparksArr.length}`;
+  nodePanel.textContent=`Active Nodes: ${nodes.length}`;
+
+  quantumPanel.style.transform=`scale(${1 + activeQuantum/50 * 0.2})`;
+  sparkPanel.style.transform=`scale(${1 + sparksArr.length/50 * 0.2})`;
+  nodePanel.style.transform=`scale(${1 + nodes.length/10 * 0.1})`;
+
+  quantumPanel.style.background=`rgba(0,0,0,${0.5 + activeQuantum/50*0.5})`;
+  sparkPanel.style.background=`rgba(0,0,0,${0.5 + sparksArr.length/50*0.5})`;
+  nodePanel.style.background=`rgba(0,0,0,${0.5 + nodes.length/10*0.5})`;
+
+  // Draw charts
+  function drawChart(ctx,data){ ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.beginPath();
+    data.forEach((v,i)=>{ const x=i*(ctx.canvas.width/maxPoints); const y=ctx.canvas.height-(v/50*ctx.canvas.height); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.strokeStyle='#0ff'; ctx.lineWidth=1.5; ctx.stroke(); }
+  drawChart(quantumCanvas,chartData.quantum);
+  drawChart(sparkCanvasCtx,chartData.sparks);
+  drawChart(nodeCanvasCtx,chartData.nodes);
+
+  requestAnimationFrame(animateAll);
 }
 
-animateNodes();
+animateAll();
+
+// ======= Web Audio Ambient Hum =======
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const oscillator=audioCtx.createOscillator();
+oscillator.type='sine';
+oscillator.frequency.setValueAtTime(55,audioCtx.currentTime);
+const gainNode=audioCtx.createGain();
+gainNode.gain.setValueAtTime(0.02,audioCtx.currentTime);
+oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); oscillator.start();
+function modulateHum(){
+  const activity=sparksArr.length; 
+  const factor=Math.min(activity/50,1);
+  oscillator.frequency.setValueAtTime(55+factor*20,audioCtx.currentTime);
+  gainNode.gain.setValueAtTime(0.01+factor*0.04,audioCtx.currentTime);
+  requestAnimationFrame(modulateHum);
+}
+modulateHum();
+document.body.addEventListener('click',()=>{audioCtx.resume();});
 
 // Handle resize
-window.addEventListener("resize", () => {
-  lineCanvas.width = window.innerWidth;
-  lineCanvas.height = window.innerHeight;
+window.addEventListener('resize',()=>{
+  sparkCanvas.width=window.innerWidth; glowCanvas.width=window.innerWidth; ambientCanvas.width=window.innerWidth;
+  sparkCanvas.height=window.innerHeight; glowCanvas.height=window.innerHeight; ambientCanvas.height=window.innerHeight;
 });
 </script>
-
 </body>
 </html>
