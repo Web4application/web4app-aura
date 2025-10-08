@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bell State Experiment</title>
+</head>
+<body>
+    <h1>Quantum Bell State Experiment</h1>
+    <button onclick="runExperiment()">Run Bell State</button>
+    <div id="results"></div>
+
+    <script>
+        async function runExperiment() {
+            document.getElementById('results').textContent = 'Running experiment...';
+            try {
+                const response = await fetch('/run-bell-state');
+                const counts = await response.json();
+                document.getElementById('results').textContent = 
+                    `Results (shots: 1024): ${JSON.stringify(counts)}`;
+            } catch (error) {
+                document.getElementById('results').textContent = 
+                    `Error running experiment: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+body {
+    font-family: monospace;
+    padding: 20px;
+}
+
+button {
+    margin: 5px 5px 5px 0;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+table th, table td {
+    padding: 6px 10px;
+    text-align: left;
+}
