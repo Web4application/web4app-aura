@@ -1,0 +1,9 @@
+.aura-active {
+  opacity: 1 !important;
+  animation: auraPulse 3s infinite ease-in-out;
+}
+
+@keyframes auraPulse {
+  0%, 100% { filter: drop-shadow(0 0 15px #7d4aff); }
+  50% { filter: drop-shadow(0 0 35px #4e2fdd); }
+}
