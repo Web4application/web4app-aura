@@ -3,6 +3,16 @@
   animation: auraPulse 3s infinite ease-in-out;
 }
 
+.floating-node {
+  transition: transform 0.2s linear;
+  filter: drop-shadow(0 0 10px #7d4aff);
+}
+
+#aura-core a:hover {
+  box-shadow: 0 0 25px #7d4aff, 0 0 50px #4e2fdd;
+  transform: scale(1.05);
+}
+
 @keyframes auraPulse {
   0%, 100% { filter: drop-shadow(0 0 15px #7d4aff); }
   50% { filter: drop-shadow(0 0 35px #4e2fdd); }
