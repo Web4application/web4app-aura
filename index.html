@@ -3,330 +3,246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AURA ECOSYSTEM</title>
+<title>AURA Core Dashboard</title>
 <style>
-  body {
-    margin:0;
-    overflow:hidden;
-    background:#000;
-    color:#0ff;
-    font-family: 'Courier New', monospace;
-  }
+@font-face {
+  font-family: 'CircularXXWeb-Bold';
+  src: url('fonts/CircularXXWeb-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
 
-  #quantum-output { position:absolute; top:0; left:0; width:100%; height:100%; z-index:12; }
-  .quantum-line { position:absolute; font-weight:bold; text-shadow:0 0 5px #0ff,0 0 10px #0ff; }
-  .floating-node {
-    position:absolute;
-    border-radius:50%;
-    background-color: rgba(125,74,255,0.6);
-    box-shadow:0 0 10px rgba(125,74,255,0.6);
-    transition: box-shadow 0.1s ease-in-out;
-  }
-  #ambient-glow { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; }
+body, html {
+  margin:0; padding:0;
+  background:#01010a;
+  overflow:hidden;
+  font-family:'CircularXXWeb-Bold', monospace;
+}
 
-  #data-panels {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index:20;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+#dashboard { position:relative; width:100vw; height:100vh; }
 
-  .panel {
-    background: rgba(0,0,0,0.6);
-    color: #0ff;
-    padding: 10px 15px;
-    font-weight:bold;
-    border-radius:8px;
-    text-shadow:0 0 5px #0ff;
-    transition: transform 0.1s ease, background 0.3s ease;
-  }
+canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; cursor:pointer; }
 
-  .panel-chart { display:block; margin-top:5px; }
+#data-panels {
+  position:absolute;
+  bottom:20px;
+  left:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index:10;
+}
+
+.panel {
+  background:rgba(0,0,0,0.6);
+  color:#0ff;
+  padding:10px 15px;
+  font-weight:bold;
+  border-radius:8px;
+  text-shadow:0 0 5px #0ff;
+  transition: transform 0.1s ease, background 0.3s ease;
+  position: relative;
+}
+
+.panel-chart { display:block; margin-top:5px; }
+
+#aura-panels {
+  position:absolute;
+  top:20px;
+  right:20px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+  z-index:10;
+}
+
+.aura-panel {
+  background:rgba(0,0,0,0.5);
+  color:#0ff;
+  padding:12px 18px;
+  border-radius:10px;
+  text-shadow:0 0 5px #0ff;
+  position: relative;
+}
+
+.aura-panel canvas { position:absolute; bottom:2px; left:2px; width:calc(100%-4px); height:30px; }
+
+.tooltip {
+  position:absolute;
+  background:rgba(0,255,255,0.9);
+  color:#000;
+  padding:5px 8px;
+  font-size:12px;
+  border-radius:5px;
+  pointer-events:none;
+  opacity:0;
+  transition: opacity 0.2s ease;
+  z-index:20;
+}
 </style>
 </head>
 <body>
 
-<div id="quantum-output"></div>
-<div id="ambient-glow"></div>
+<div id="dashboard">
+  <canvas id="quantum-canvas"></canvas>
 
-<div id="data-panels">
-  <div class="panel" id="quantum-panel">
-    Quantum Activity: 0
-    <canvas class="panel-chart" width="120" height="40"></canvas>
+  <div id="data-panels">
+    <div class="panel" id="quantum-panel">
+      Quantum Activity: 0
+      <canvas class="panel-chart" width="120" height="40"></canvas>
+    </div>
+    <div class="panel" id="spark-panel">
+      Active Sparks: 0
+      <canvas class="panel-chart" width="120" height="40"></canvas>
+    </div>
+    <div class="panel" id="node-panel">
+      Active Nodes: 0
+      <canvas class="panel-chart" width="120" height="40"></canvas>
+    </div>
   </div>
-  <div class="panel" id="spark-panel">
-    Active Sparks: 0
-    <canvas class="panel-chart" width="120" height="40"></canvas>
+
+  <div id="aura-panels">
+    <div class="aura-panel" id="dimensions-panel">
+      Dimensions: <span id="dimensions-value">0</span>
+      <canvas></canvas>
+    </div>
+    <div class="aura-panel" id="teleport-panel">
+      Teleport X/Y: <span id="teleport-value">0,0</span>
+      <canvas></canvas>
+    </div>
+    <div class="aura-panel" id="xlsl-panel">
+      XLSL Sheets: <span id="xlsl-value">0</span>
+      <canvas></canvas>
+    </div>
   </div>
-  <div class="panel" id="node-panel">
-    Active Nodes: 0
-    <canvas class="panel-chart" width="120" height="40"></canvas>
-  </div>
+
+  <div class="tooltip" id="tooltip"></div>
 </div>
 
 <script>
-// ======= Setup =======
+// ----------------- Canvas Setup -----------------
+const canvas=document.getElementById('quantum-canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-const variables = ['ψ','Φ','Δ','λ','θ','σ','E','ħ'];
-const operators = ['=','≈','∑','+','-','*','/'];
-const numLines = 50;
-const lines = [];
-const nodes = [];
-const sparks = [];
-const maxNodes = 10;
-let mouse = {x: window.innerWidth/2, y: window.innerHeight/2};
+// Panels & Charts
+const quantumPanel=document.getElementById('quantum-panel');
+const sparkPanel=document.getElementById('spark-panel');
+const nodePanel=document.getElementById('node-panel');
+const quantumChartCtx=quantumPanel.querySelector('canvas').getContext('2d');
+const sparkChartCtx=sparkPanel.querySelector('canvas').getContext('2d');
+const nodeChartCtx=nodePanel.querySelector('canvas').getContext('2d');
 
-// Track mouse
-window.addEventListener('mousemove', e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+const dimensionsPanel=document.getElementById('dimensions-panel');
+const teleportPanel=document.getElementById('teleport-panel');
+const xlslPanel=document.getElementById('xlsl-panel');
 
-// Quantum output
-const quantumOutput = document.getElementById('quantum-output');
+const dimensionsCanvas=dimensionsPanel.querySelector('canvas').getContext('2d');
+const teleportCanvas=teleportPanel.querySelector('canvas').getContext('2d');
+const xlslCanvas=xlslPanel.querySelector('canvas').getContext('2d');
 
-// Helpers
-function getRandomQuantumLine() {
-  const var1 = variables[Math.floor(Math.random()*variables.length)];
-  const var2 = variables[Math.floor(Math.random()*variables.length)];
-  const op = operators[Math.floor(Math.random()*operators.length)];
-  const value = (Math.random()*10).toFixed(3);
-  return `${var1} ${op} ${var2} + ${value}`;
-}
+const dimensionsValue=document.getElementById('dimensions-value');
+const teleportValue=document.getElementById('teleport-value');
+const xlslValue=document.getElementById('xlsl-value');
 
-function createQuantumLine() {
-  const line = document.createElement('div');
-  line.className='quantum-line';
-  line.textContent=getRandomQuantumLine();
-  line.x=Math.random()*window.innerWidth;
-  line.y=Math.random()*window.innerHeight;
-  line.speed=1+Math.random()*2;
-  line.colorHue=Math.random()*360;
-  line.style.left=line.x+'px';
-  line.style.top=line.y+'px';
-  quantumOutput.appendChild(line);
-  lines.push(line);
-}
-for(let i=0;i<numLines;i++) createQuantumLine();
+const tooltip=document.getElementById('tooltip');
 
-function createNode(x,y){
-  const el = document.createElement('div');
-  el.className='floating-node';
-  el.style.width='20px';
-  el.style.height='20px';
-  el.style.left=x+'px';
-  el.style.top=y+'px';
-  document.body.appendChild(el);
-  nodes.push({x,y,el});
-}
+// ----------------- Utils -----------------
+function random(min,max){return Math.random()*(max-min)+min;}
+
+// ----------------- Quantum Nodes & Sparks -----------------
+let nodes=[], sparks=[], arcs=[], trails=[];
+const maxNodes=10, maxSparks=120, maxArcs=5;
 for(let i=0;i<maxNodes;i++){
-  createNode(Math.random()*window.innerWidth, Math.random()*window.innerHeight);
+  nodes.push({x:random(50,canvas.width-50),y:random(50,canvas.height-50),radius:random(8,16),glow:0, energy: random(1,100)});
 }
-
-// ======= Canvases =======
-
-const sparkCanvas = document.createElement('canvas');
-sparkCanvas.style.position='absolute';
-sparkCanvas.style.top='0';
-sparkCanvas.style.left='0';
-sparkCanvas.style.width='100%';
-sparkCanvas.style.height='100%';
-sparkCanvas.style.pointerEvents='none';
-sparkCanvas.style.zIndex=14;
-document.body.appendChild(sparkCanvas);
-const sparkCtx = sparkCanvas.getContext('2d');
-sparkCanvas.width=window.innerWidth;
-sparkCanvas.height=window.innerHeight;
-
-const glowCanvas = document.createElement('canvas');
-glowCanvas.style.position='absolute';
-glowCanvas.style.top='0';
-glowCanvas.style.left='0';
-glowCanvas.style.width='100%';
-glowCanvas.style.height='100%';
-glowCanvas.style.pointerEvents='none';
-glowCanvas.style.zIndex=13;
-document.body.appendChild(glowCanvas);
-const glowCtx = glowCanvas.getContext('2d');
-glowCanvas.width=window.innerWidth;
-glowCanvas.height=window.innerHeight;
-
-const ambientCanvas = document.getElementById('ambient-glow');
-const ambientCtx = ambientCanvas.getContext('2d');
-ambientCanvas.width=window.innerWidth;
-ambientCanvas.height=window.innerHeight;
-
-const quantumPanel = document.getElementById('quantum-panel');
-const sparkPanel = document.getElementById('spark-panel');
-const nodePanel = document.getElementById('node-panel');
-
-const quantumCanvas = document.querySelector('#quantum-panel canvas').getContext('2d');
-const sparkCanvasCtx = document.querySelector('#spark-panel canvas').getContext('2d');
-const nodeCanvasCtx = document.querySelector('#node-panel canvas').getContext('2d');
-
-const chartData={quantum:[],sparks:[],nodes:[]};
-const maxPoints=50;
-
-// ======= Spark + Trail Classes =======
 
 class Spark{
-  constructor(x,y,targetNode){
-    this.x=x; this.y=y; this.target=targetNode;
-    this.speed=0.02+Math.random()*0.03;
-    this.hue=Math.random()*360;
-  }
-  update(){
-    const dx=this.target.x-this.x;
-    const dy=this.target.y-this.y;
-    this.x+=dx*this.speed;
-    this.y+=dy*this.speed;
-    sparkTrails.push(new SparkTrail(this.x,this.y,this.hue));
-    sparkCtx.beginPath();
-    sparkCtx.arc(this.x,this.y,2,0,Math.PI*2);
-    sparkCtx.fillStyle=`hsla(${this.hue},100%,70%,0.8)`;
-    sparkCtx.fill();
-  }
-  isArrived(){ return Math.hypot(this.x-this.target.x,this.y-this.target.y)<5; }
+  constructor(x,y,target){this.x=x; this.y=y; this.target=target; this.speed=random(0.01,0.03);}
+  update(){const dx=this.target.x-this.x; const dy=this.target.y-this.y; this.x+=dx*this.speed; this.y+=dy*this.speed;}
+  draw(){ const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,6); grad.addColorStop(0,'#0ff'); grad.addColorStop(1,'rgba(0,255,255,0)'); ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill(); }
 }
 
-class SparkTrail{
-  constructor(x,y,hue){ this.x=x; this.y=y; this.hue=hue; this.life=30+Math.random()*20; }
-  update(){
-    this.life--;
-    glowCtx.beginPath();
-    glowCtx.arc(this.x,this.y,1.5,0,Math.PI*2);
-    glowCtx.fillStyle=`hsla(${this.hue},100%,70%,${this.life/50})`;
-    glowCtx.fill();
-  }
+class Arc{
+  constructor(a,b){this.a=a; this.b=b; this.life=random(30,60);}
+  update(){this.life--; return this.life>0;}
+  draw(){ const grad=ctx.createLinearGradient(this.a.x,this.a.y,this.b.x,this.b.y); grad.addColorStop(0,'#0ff'); grad.addColorStop(1,'rgba(0,255,255,0)'); ctx.strokeStyle=grad; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(this.a.x,this.a.y); const midX=(this.a.x+this.b.x)/2 + random(-20,20); const midY=(this.a.y+this.b.y)/2 + random(-20,20); ctx.quadraticCurveTo(midX,midY,this.b.x,this.b.y); ctx.stroke(); }
 }
 
-class MicroFlare{
-  constructor(x,y){ this.x=x; this.y=y; this.size=Math.random()*3+1; this.life=20+Math.random()*30; this.hue=Math.random()*360; }
-  update(){
-    this.life--;
-    ambientCtx.beginPath();
-    ambientCtx.arc(this.x,this.y,this.size,0,Math.PI*2);
-    ambientCtx.fillStyle=`hsla(${this.hue},100%,70%,${this.life/50})`;
-    ambientCtx.fill();
-  }
+// Trails for teleport
+class Trail{constructor(x,y){this.x=x; this.y=y; this.alpha=1;} update(){this.alpha-=0.02;} draw(){ctx.beginPath(); ctx.arc(this.x,this.y,3,0,Math.PI*2); ctx.fillStyle=`rgba(0,255,255,${this.alpha})`; ctx.fill();}}
+function generateSparks(){ if(sparks.length<maxSparks){ const node=nodes[Math.floor(Math.random()*nodes.length)]; sparks.push(new Spark(random(0,canvas.width),random(0,canvas.height),node)); } }
+function generateArcs(){ if(arcs.length<maxArcs){ const a=nodes[Math.floor(Math.random()*nodes.length)]; let b=nodes[Math.floor(Math.random()*nodes.length)]; if(a!==b) arcs.push(new Arc(a,b)); } }
+
+// ----------------- Panels Update -----------------
+const chartData={quantum:[], sparks:[], nodes:[], dimensions:[], teleport:[], xlsl:[]}, maxPoints=50;
+function drawMiniChart(ctx,data){
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.beginPath();
+  data.forEach((v,i)=>{ const x=i*(ctx.canvas.width/maxPoints); const y=ctx.canvas.height-(v/50*ctx.canvas.height); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);});
+  ctx.strokeStyle='#0ff'; ctx.lineWidth=1.2; ctx.stroke();
 }
-
-const sparksArr=[],sparkTrails=[],microFlares=[];
-
-// ======= Animation Loop =======
-
-function animateAll(){
-  sparkCtx.clearRect(0,0,sparkCanvas.width,sparkCanvas.height);
-  glowCtx.clearRect(0,0,glowCanvas.width,glowCanvas.height);
-  ambientCtx.clearRect(0,0,ambientCanvas.width,ambientCanvas.height);
-
-  // Update quantum lines
-  lines.forEach(line=>{
-    line.y+=line.speed;
-    const dxm=mouse.x-line.x;
-    const dym=mouse.y-line.y;
-    if(Math.sqrt(dxm*dxm+dym*dym)<150){ line.x+=dxm*0.02; line.y+=dym*0.02; }
-    nodes.forEach(node=>{
-      const dx=node.x-line.x;
-      const dy=node.y-line.y;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<120){ line.x+=dx*0.03; line.y+=dy*0.03;
-        if(Math.random()<0.02) sparksArr.push(new Spark(line.x,line.y,node));
-      }
-    });
-    if(line.y>window.innerHeight){ line.y=-20; line.x=Math.random()*window.innerWidth; line.textContent=getRandomQuantumLine(); line.colorHue=Math.random()*360; }
-    line.style.left=line.x+'px';
-    line.style.top=line.y+'px';
-    line.style.color=`hsla(${line.colorHue},100%,70%,${0.6+0.4*Math.sin(Date.now()*0.005)})`;
-  });
-
-  // Sparks
-  for(let i=sparksArr.length-1;i>=0;i--){
-    sparksArr[i].update();
-    if(sparksArr[i].isArrived()){
-      sparksArr[i].target.el.style.boxShadow=`0 0 ${15+Math.random()*15}px rgba(125,74,255,0.9)`;
-      sparksArr.splice(i,1);
-    }
-  }
-
-  // Spark trails
-  for(let i=sparkTrails.length-1;i>=0;i--){
-    sparkTrails[i].update();
-    if(sparkTrails[i].life<=0) sparkTrails.splice(i,1);
-  }
-
-  // Ambient glow & micro-flares
-  nodes.forEach(node=>{
-    const radius=50+20*Math.sin(Date.now()*0.005+node.x);
-    const gradient=ambientCtx.createRadialGradient(node.x,node.y,0,node.x,node.y,radius);
-    gradient.addColorStop(0,'rgba(125,74,255,0.15)');
-    gradient.addColorStop(1,'rgba(125,74,255,0)');
-    ambientCtx.fillStyle=gradient;
-    ambientCtx.beginPath();
-    ambientCtx.arc(node.x,node.y,radius,0,Math.PI*2);
-    ambientCtx.fill();
-  });
-
-  lines.forEach(line=>{ if(Math.random()<0.02) microFlares.push(new MicroFlare(line.x+(Math.random()-0.5)*10,line.y+(Math.random()-0.5)*10)); });
-  for(let i=microFlares.length-1;i>=0;i--){ microFlares[i].update(); if(microFlares[i].life<=0) microFlares.splice(i,1); }
-
-  // Panels update
-  const activeQuantum = lines.filter(line=>nodes.some(node=>Math.hypot(node.x-line.x,node.y-line.y)<120)).length;
-  chartData.quantum.push(activeQuantum);
-  chartData.sparks.push(sparksArr.length);
-  chartData.nodes.push(nodes.length);
-  if(chartData.quantum.length>maxPoints) chartData.quantum.shift();
-  if(chartData.sparks.length>maxPoints) chartData.sparks.shift();
-  if(chartData.nodes.length>maxPoints) chartData.nodes.shift();
-
-  quantumPanel.textContent=`Quantum Activity: ${activeQuantum}`;
-  sparkPanel.textContent=`Active Sparks: ${sparksArr.length}`;
+function updatePanels(){
+  quantumPanel.textContent=`Quantum Activity: ${nodes.length*2}`;
+  sparkPanel.textContent=`Active Sparks: ${sparks.length}`;
   nodePanel.textContent=`Active Nodes: ${nodes.length}`;
 
-  quantumPanel.style.transform=`scale(${1 + activeQuantum/50 * 0.2})`;
-  sparkPanel.style.transform=`scale(${1 + sparksArr.length/50 * 0.2})`;
-  nodePanel.style.transform=`scale(${1 + nodes.length/10 * 0.1})`;
+  chartData.quantum.push(nodes.length*2); chartData.sparks.push(sparks.length); chartData.nodes.push(nodes.length);
+  if(chartData.quantum.length>maxPoints) chartData.quantum.shift(); if(chartData.sparks.length>maxPoints) chartData.sparks.shift(); if(chartData.nodes.length>maxPoints) chartData.nodes.shift();
 
-  quantumPanel.style.background=`rgba(0,0,0,${0.5 + activeQuantum/50*0.5})`;
-  sparkPanel.style.background=`rgba(0,0,0,${0.5 + sparksArr.length/50*0.5})`;
-  nodePanel.style.background=`rgba(0,0,0,${0.5 + nodes.length/10*0.5})`;
+  drawMiniChart(quantumChartCtx,chartData.quantum);
+  drawMiniChart(sparkChartCtx,chartData.sparks);
+  drawMiniChart(nodeChartCtx,chartData.nodes);
 
-  // Draw charts
-  function drawChart(ctx,data){ ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.beginPath();
-    data.forEach((v,i)=>{ const x=i*(ctx.canvas.width/maxPoints); const y=ctx.canvas.height-(v/50*ctx.canvas.height); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
-    ctx.strokeStyle='#0ff'; ctx.lineWidth=1.5; ctx.stroke(); }
-  drawChart(quantumCanvas,chartData.quantum);
-  drawChart(sparkCanvasCtx,chartData.sparks);
-  drawChart(nodeCanvasCtx,chartData.nodes);
+  // Aura Panels dynamic values
+  const dimVal=(Math.sin(Date.now()*0.001)*10 + 50).toFixed(2);
+  dimensionsValue.textContent=dimVal;
+  chartData.dimensions.push(dimVal); if(chartData.dimensions.length>maxPoints) chartData.dimensions.shift();
+  drawMiniChart(dimensionsCanvas,chartData.dimensions);
 
-  requestAnimationFrame(animateAll);
+  const teleX=(Math.sin(Date.now()*0.002)*100).toFixed(1); const teleY=(Math.cos(Date.now()*0.002)*100).toFixed(1);
+  teleportValue.textContent=`${teleX},${teleY}`;
+  chartData.teleport.push(parseFloat(teleX)); if(chartData.teleport.length>maxPoints) chartData.teleport.shift();
+  drawMiniChart(teleportCanvas,chartData.teleport);
+
+  const xlslVal=Math.floor(Math.random()*1000);
+  xlslValue.textContent=xlslVal;
+  chartData.xlsl.push(xlslVal); if(chartData.xlsl.length>maxPoints) chartData.xlsl.shift();
+  drawMiniChart(xlslCanvas,chartData.xlsl);
 }
 
-animateAll();
+// ----------------- Background & Animate -----------------
+function drawBackground(){ const t=Date.now()*0.002; const grd=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width/2); grd.addColorStop(0,`rgba(0,10,20,${0.05+0.05*Math.sin(t)})`); grd.addColorStop(1,'rgba(0,0,0,0.8)'); ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);}
 
-// ======= Web Audio Ambient Hum =======
-const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-const oscillator=audioCtx.createOscillator();
-oscillator.type='sine';
-oscillator.frequency.setValueAtTime(55,audioCtx.currentTime);
-const gainNode=audioCtx.createGain();
-gainNode.gain.setValueAtTime(0.02,audioCtx.currentTime);
-oscillator.connect(gainNode); gainNode.connect(audioCtx.destination); oscillator.start();
-function modulateHum(){
-  const activity=sparksArr.length; 
-  const factor=Math.min(activity/50,1);
-  oscillator.frequency.setValueAtTime(55+factor*20,audioCtx.currentTime);
-  gainNode.gain.setValueAtTime(0.01+factor*0.04,audioCtx.currentTime);
-  requestAnimationFrame(modulateHum);
+function drawConnections(){ for(let i=0;i<nodes.length;i++){ for(let j=i+1;j<nodes.length;j++){ const dx=nodes[j].x-nodes[i].x, dy=nodes[j].y-nodes[i].y; const dist=Math.hypot(dx,dy); if(dist<200){ ctx.strokeStyle=`rgba(0,255,255,${1-dist/200})`; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke(); }}}}
+
+function animate(){
+  drawBackground();
+  drawConnections();
+  nodes.forEach(n=>{ n.glow=0.5+Math.sin(Date.now()*0.005+n.x)*0.5; ctx.beginPath(); ctx.arc(n.x,n.y,n.radius,0,Math.PI*2); ctx.fillStyle=`rgba(0,255,255,${n.glow})`; ctx.fill(); });
+  for(let i=sparks.length-1;i>=0;i--){ sparks[i].update(); sparks[i].draw(); if(Math.hypot(sparks[i].x-sparks[i].target.x,sparks[i].y-sparks[i].target.y)<5) sparks.splice(i,1);}
+  generateSparks(); generateArcs(); for(let i=arcs.length-1;i>=0;i--){ if(!arcs[i].update()) arcs.splice(i,1); else arcs[i].draw();}
+  // Draw trails
+  for(let i=trails.length-1;i>=0;i--){ trails[i].update(); trails[i].draw(); if(trails[i].alpha<=0) trails.splice(i,1);}
+  updatePanels();
+  requestAnimationFrame(animate);
 }
-modulateHum();
-document.body.addEventListener('click',()=>{audioCtx.resume();});
+animate();
 
-// Handle resize
-window.addEventListener('resize',()=>{
-  sparkCanvas.width=window.innerWidth; glowCanvas.width=window.innerWidth; ambientCanvas.width=window.innerWidth;
-  sparkCanvas.height=window.innerHeight; glowCanvas.height=window.innerHeight; ambientCanvas.height=window.innerHeight;
+// ----------------- Interactivity -----------------
+canvas.addEventListener('mousemove', e=>{
+  let found=false;
+  nodes.forEach(n=>{ const dx=e.clientX-n.x, dy=e.clientY-n.y; if(Math.hypot(dx,dy)<n.radius){ tooltip.style.left=(n.x+10)+'px'; tooltip.style.top=(n.y+10)+'px'; tooltip.innerHTML=`Node Energy: ${n.energy.toFixed(1)}<br>Radius: ${n.radius.toFixed(1)}`; tooltip.style.opacity=1; found=true; } });
+  if(!found) tooltip.style.opacity=0;
 });
+
+canvas.addEventListener('click', e=>{
+  teleportValue.textContent=`${e.clientX},${e.clientY}`;
+  for(let i=0;i<30;i++){ sparks.push(new Spark(e.clientX+random(-50,50), e.clientY+random(-50,50), {x:e.clientX, y:e.clientY})); trails.push(new Trail(e.clientX+random(-50,50), e.clientY+random(-50,50))); }
+});
+
+window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 </script>
 </body>
 </html>
