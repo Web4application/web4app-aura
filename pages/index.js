@@ -28,24 +28,25 @@ export default function Home() {
         </p>
       </section>
 
-      <section
+   <section
   id="aura-core"
   ref={auraRef}
   className="relative min-h-screen flex flex-col items-center justify-center opacity-0 transition-opacity duration-1000"
 >
+  <FloatingNodes /> {/* Floating nodes behind the blueprint */}
+
   <img
     src="/visuals/aura_core_blueprint.svg"
     alt="AURA Core Blueprint"
-    className="max-w-4xl w-full"
+    className="max-w-4xl w-full relative z-10"
   />
-  <p className="text-white/80 text-center mt-6 text-2xl font-semibold">
+  <p className="text-white/80 text-center mt-6 text-2xl font-semibold relative z-10">
     AURA Core — The Neural Engine Powering All Web4 Intelligence.
   </p>
 
-  {/* Click to Explore Button */}
   <a
     href="/aura-visualizer"
-    className="mt-8 px-6 py-3 bg-[#7d4aff]/80 hover:bg-[#7d4aff] rounded text-white font-semibold transition-all"
+    className="mt-8 px-6 py-3 bg-[#7d4aff]/80 hover:bg-[#7d4aff] rounded text-white font-semibold transition-all relative z-10"
   >
     Click to Explore
   </a>
