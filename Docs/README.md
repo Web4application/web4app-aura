@@ -1,3 +1,5 @@
+![AURA Core Minimal](public/visuals/aura_core_whitepaper.svg)
+
 ```
 
 TEST
